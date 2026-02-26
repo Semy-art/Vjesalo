@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vješala - Glavni gradovi Evrope</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #f2f2f2;
+}
+
+h1 {
+    margin-top: 20px;
+}
+
+#lives {
+    font-size: 18px;
+    margin: 10px;
+}
+
+#word {
+    font-size: 28px;
+    letter-spacing: 8px;
+    margin: 20px;
+}
+
+button {
+    margin: 4px;
+    padding: 8px 12px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#keyboard {
+    max-width: 700px;
+    margin: auto;
+}
+
+canvas {
+    background: white;
+    margin-top: 20px;
+}
+
+#restartBtn {
+    display: none;
+    margin-top: 15px;
+    padding: 10px 15px;
+    font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>VJEŠALA - Glavni gradovi Evrope</h1>
+
+<div id="lives">Životi: 6</div>
+<canvas id="hangmanCanvas" width="200" height="250"></canvas>
+<div id="word"></div>
+<div id="keyboard"></div>
+<div id="message"></div>
+<button id="restartBtn">Igraj ponovo</button>
+
+<script>
+
+const capitals = [
+"AMSTERDAM","ANDORRA LA VELLA","ANKARA","ATHENS","BELGRADE","BERLIN",
+"BERN","BRATISLAVA","BRUSSELS","BUCHAREST","BUDAPEST","CHISINAU",
+"COPENHAGEN","DUBLIN","HELSINKI","KYIV","LISBON","LJUBLJANA",
+"LONDON","LUXEMBOURG","MADRID","MINSK","MONACO","MOSCOW",
+"NICOSIA","OSLO","PARIS","PODGORICA","PRAGUE","REYKJAVIK",
+"RIGA","ROME","SAN MARINO","SARAJEVO","SKOPJE","SOFIA",
+"STOCKHOLM","TALLINN","TIRANA","VADUZ","VALLETTA","VIENNA",
+"VILNIUS","WARSAW","ZAGREB"
+];
+
+const alphabet = [
+"A","B","C","Č","Ć","D","Đ","E","F","G","H","I","J","K","L","M",
+"N","O","P","Q","R","S","Š","T","U","V","W","X","Y","Z","Ž"
+];
+
+let chosenWord;
+let lives;
+let correctLetters;
+
+const wordDiv = document.getElementById("word");
+const livesDiv = document.getElementById("lives");
+const keyboardDiv = document.getElementById("keyboard");
+const messageDiv = document.getElementById("message");
+const restartBtn = document.getElementById("restartBtn");
+
+const canvas = document.getElementById("hangmanCanvas");
+const ctx = canvas.getContext("2d");
+
+function initGame() {
+    chosenWord = capitals[Math.floor(Math.random() * capitals.length)];
+    lives = 6;
+    correctLetters = [];
+
+    messageDiv.innerText = "";
+    livesDiv.innerText = "Životi: 6";
+    restartBtn.style.display = "none";
+
+    keyboardDiv.innerHTML = "";
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    drawBase();
+    displayWord();
+    createKeyboard();
+}
+
+function drawBase() {
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(10,240);
+    ctx.lineTo(190,240);
+    ctx.moveTo(50,240);
+    ctx.lineTo(50,20);
+    ctx.lineTo(130,20);
+    ctx.lineTo(130,40);
+    ctx.stroke();
+}
+
+function drawHangman(stage) {
+    switch(stage) {
+        case 5:
+            ctx.beginPath();
+            ctx.arc(130,60,20,0,Math.PI*2);
+            ctx.stroke();
+            break;
+        case 4:
+            ctx.beginPath();
+            ctx.moveTo(130,80);
+            ctx.lineTo(130,150);
+            ctx.stroke();
+            break;
+        case 3:
+            ctx.beginPath();
+            ctx.moveTo(130,100);
+            ctx.lineTo(100,120);
+            ctx.stroke();
+            break;
+        case 2:
+            ctx.beginPath();
+            ctx.moveTo(130,100);
+            ctx.lineTo(160,120);
+            ctx.stroke();
+            break;
+        case 1:
+            ctx.beginPath();
+            ctx.moveTo(130,150);
+            ctx.lineTo(110,190);
+            ctx.stroke();
+            break;
+        case 0:
+            ctx.beginPath();
+            ctx.moveTo(130,150);
+            ctx.lineTo(150,190);
+            ctx.stroke();
+            break;
+    }
+}
+
+function displayWord() {
+    let display = "";
+    for (let letter of chosenWord) {
+        if (letter === " ") {
+            display += "  ";
+        } else if (correctLetters.includes(letter)) {
+            display += letter + " ";
+        } else {
+            display += "_ ";
+        }
+    }
+    wordDiv.innerText = display;
+}
+
+function createKeyboard() {
+    alphabet.forEach(letter => {
+        const button = document.createElement("button");
+        button.innerText = letter;
+        button.onclick = () => handleGuess(letter, button);
+        keyboardDiv.appendChild(button);
+    });
+}
+
+function handleGuess(letter, button) {
+    button.disabled = true;
+
+    if (chosenWord.includes(letter)) {
+        correctLetters.push(letter);
+    } else {
+        lives--;
+        livesDiv.innerText = "Životi: " + lives;
+        drawHangman(lives);
+    }
+
+    displayWord();
+    checkGameOver();
+}
+
+function checkGameOver() {
+    let won = true;
+
+    for (let letter of chosenWord) {
+        if (letter !== " " && !correctLetters.includes(letter)) {
+            won = false;
+        }
+    }
+
+    if (won) endGame(true);
+    if (lives === 0) endGame(false);
+}
+
+function endGame(win) {
+    messageDiv.innerText = win
+        ? "POBJEDILI STE! 🎉 Riječ je bila " + chosenWord
+        : "IZGUBILI STE! Riječ je bila " + chosenWord;
+
+    restartBtn.style.display = "inline-block";
+
+    const buttons = keyboardDiv.querySelectorAll("button");
+    buttons.forEach(btn => btn.disabled = true);
+}
+
+restartBtn.onclick = initGame;
+
+initGame();
+
+</script>
+
+</body>
+</html>
